@@ -1,0 +1,17 @@
+PE Génération de la sortie dans un cul de sac
+Affichage du maze dans canvas
+
+Déplacement du joueur
+
+Edralo spatialization avant/arriere
+
+
+Cyril gamepad.api
+		-> rumble
+
+Première phase de gameplay (cliquer sur la bonne case)
+Deuxième phase de gameplay ()
+
+Ecran d'accueil
+Ecran de regle
+Ecran de victoire
