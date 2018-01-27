@@ -16,3 +16,11 @@ JoueurClavier/MuteDeafPlayer :
 						Annoter sur la carte
 		Camera		:	Carte du maze
 		Controls	:	Souris
+
+Carte
+La carte représente la totalité du maze.
+Le triangle sur la carte est le BlindPlayer.
+La sortie n'est pas visible sur la carte.
+
+Maze
+La sortie du labyrinthe émets un son.

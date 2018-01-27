@@ -1,5 +1,4 @@
-PE Génération de la sortie dans un cul de sac
-Affichage du maze dans canvas
+PE :Génération de la sortie dans un cul de sac
 
 Déplacement du joueur
 
@@ -15,3 +14,6 @@ Deuxième phase de gameplay ()
 Ecran d'accueil
 Ecran de regle
 Ecran de victoire
+
+#STANDBY
+Affichage du maze dans canvas
