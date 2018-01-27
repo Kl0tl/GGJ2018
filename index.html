@@ -98,6 +98,8 @@
 	    </div>
 	  </div>
 	</div>
+	<script src="binaural-fir.min.js"></script>
+	<script src="complete_hrtfs.js"></script>
 	<script>
 		class Maze {
 			constructor({ audio, width, height }) {
@@ -110,8 +112,8 @@
 				this.exit = {
 					position: { x: 0, y: 0 },
 					audio: {
-						source: null,
-						panner: null
+						source: audio.createBufferSource(),
+						panner: new BinauralFIR({audioContext: audio})
 					}
 				};
 			}
@@ -215,13 +217,33 @@
 			}
 		}
 		class Pulse {
-			constructor({ removable } = {}) {
+			constructor({ audio, removable } = {}) {
 				this.element = document.createElement('span');
 				this.element.classList.add('pulse');
 				if (removable) {
 					this.onClick = this.onClick.bind(this);
 					this.element.addEventListener('click', this.onClick);
 				}
+				this.audio = {
+					source: audio.createBufferSource(),
+					panner: new BinauralFIR({audioContext: audio})
+				};
+				this.audio.panner.HRTFDataset = hrtfs;
+				var request = new XMLHttpRequest();
+				request.open('GET', './ameno.mp3', true);
+				request.responseType = 'arraybuffer';
+				request.onload = () => {
+					audio.decodeAudioData(request.response, (buffer) => {
+						this.audio.source.buffer = buffer;
+						this.audio.source.connect(this.audio.panner.input);
+						this.audio.panner.connect(audio.destination);
+						this.audio.source.loop = false;
+						this.audio.source.start();
+					}, console.error);
+				};
+				request.send();
+				console.log(audio.listener);
+				this.audio.panner.setPosition(-90, 0, 2);
 			}
 
 			onClick() {
@@ -255,6 +277,18 @@
 		    	}
 		    };
 		    this.layers.paths.context = this.layers.paths.element.getContext('2d');
+
+				// HRTF files loading
+				for (var i = 0; i < hrtfs.length; i++) {
+						var buffer = this.audio.createBuffer(2, 512, 44100);
+						var bufferChannelLeft = buffer.getChannelData(0);
+						var bufferChannelRight = buffer.getChannelData(1);
+						for (var e = 0; e < hrtfs[i].fir_coeffs_left.length; e++) {
+								bufferChannelLeft[e] = hrtfs[i].fir_coeffs_left[e];
+								bufferChannelRight[e] = hrtfs[i].fir_coeffs_right[e];
+						}
+						hrtfs[i].buffer = buffer;
+				}
 		    this.maze = new Maze({
 		      audio: this.audio,
 		      width, height
@@ -263,7 +297,10 @@
 		    	position: { x: 0, y: 0 },
 		    	orientation: 0
 		    });
-		    this.ping = new Pulse({ removable: true });
+		    this.ping = new Pulse({
+					audio: this.audio,
+					removable: true
+				});
 
 		    this.onEnablePinging = this.onEnablePinging.bind(this);
 		    this.onEnableDrawing = this.onEnableDrawing.bind(this);
