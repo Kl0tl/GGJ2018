@@ -268,7 +268,6 @@
 						this.audio.source.connect(this.audio.panner.input);
 						this.audio.panner.connect(audio.destination);
 						this.audio.source.loop = false;
-						this.audio.source.start();
 					}, console.error);
 				};
 				request.send();
@@ -277,6 +276,7 @@
 
 			onClick() {
 				this.element.remove();
+				this.audio.source.stop();
 			}
 		}
 
@@ -368,6 +368,7 @@
 		  	if (!this.ping.element.parentElement) {
 		  		this.layers.pings.element.appendChild(this.ping.element);
 		  	}
+				this.ping.audio.source.start();
 		  }
 
 		  onEnableDrawing() {
