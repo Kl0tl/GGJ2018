@@ -3,6 +3,16 @@
 <head>
 	<title>GGJ 2018</title>
 	<style>
+		.scene {
+			display: none;
+		}
+		.scenes[data-selected="Rules"] .scene[data-scene="Rules"],
+		.scenes[data-selected="Intro"] .scene[data-scene="Intro"],
+		.scenes[data-selected="Loading"] .scene[data-scene="Loading"],
+		.scenes[data-selected="Game"] .scene[data-scene="Game"] {
+			display: block;
+		}
+
 		.pings-layer, .players-layer {
 			position: relative;
 		}
@@ -98,24 +108,38 @@
 </head>
 <body>
 	<div id="root">
-	  <div class="layers">
-	  	<div class="maze-layer"></div>
-	  	<div class="pings-layer"></div>
-	  	
-	  	<div class="players-layer"></div><canvas class="paths-layer"></canvas>
-	  </div>
-	  <div class="controls">
-	  	<div class="draw">
-	    	<button>Draw</button>
-	    	<div class="colors" data-selected="chartreuse">
-	    		<span class="color" data-color="chartreuse"></span>
-	    		<span class="color" data-color="magenta"></span>
-	    	</div>
-	    </div>
-	    <div class="ping">
-	    	<button>Ping</button>
-	    </div>
-	  </div>
+		<div class="scenes" data-selected="Rules">
+			<div class="scene" data-scene="Rules">
+				<button>Go to intro</button>
+			</div>
+			<div class="scene" data-scene="Intro">
+				<button>Go to game</button>
+			</div>
+			<div class="scene" data-scene="Loading">
+				Loading…
+			</div>
+			<div class="scene" data-scene="Game">
+			  <div class="layers">
+			  	<div class="maze-layer"></div>
+			  	<div class="players-layer"></div>
+			  	<div class="pings-layer"></div>
+			  	<canvas class="paths-layer"></canvas>
+			  </div>
+			  <div class="controls">
+			  	<div class="draw">
+			    	<button>Draw</button>
+			    	<div class="colors" data-selected="chartreuse">
+			    		<span class="color" data-color="chartreuse"></span>
+			    		<span class="color" data-color="magenta"></span>
+			    	</div>
+			    </div>
+			    <div class="ping">
+			    	<button>Ping</button>
+			    </div>
+			  </div>
+			</div>
+			<div class="scene" data-scene="outro"></div>
+		</div>
 	</div>
 	<script src="Maze.js"></script>
 	<script src="binaural-fir.min.js"></script>
@@ -225,7 +249,7 @@
 			}
 		}
 		class Pulse {
-			constructor({ audio, removable } = {}) {
+			constructor({ audio, assets, removable } = {}) {
 				this.element = document.createElement('span');
 				this.element.classList.add('pulse');
 				if (removable) {
@@ -237,30 +261,24 @@
 					panner: new BinauralFIR({audioContext: audio})
 				};
 				this.audio.panner.HRTFDataset = hrtfs;
-				var request = new XMLHttpRequest();
-				request.open('GET', './ameno.mp3', true);
-				request.responseType = 'arraybuffer';
-				request.onload = () => {
-					audio.decodeAudioData(request.response, (buffer) => {
-						this.audio.source.buffer = buffer;
-						this.audio.source.connect(this.audio.panner.input);
-						this.audio.panner.connect(audio.destination);
-						this.audio.source.loop = false;
-					}, console.error);
-				};
-				request.send();
+				this.audio.source.buffer = assets['./ameno.mp3'];
+				this.audio.source.connect(this.audio.panner.input);
+				this.audio.panner.connect(audio.destination);
+				this.audio.source.loop = false;
 				this.audio.panner.setPosition(-90, 0, 2);
 			}
 
-			onClick() {
+			onClick(event) {
 				this.element.remove();
 				this.audio.source.stop();
+				event.stopPropagation();
 			}
 		}
 
 		class Game {
-		  constructor({ element, width, height }) {
-		    this.audio = new AudioContext();
+		  constructor({ element, assets, audio, width, height }) {
+		  	this.assets = assets;
+		  	this.audio = audio;
 		    this.mouse = new Mouse();
 		    this.element = element;
 		    this.cellSize = 30;
@@ -309,6 +327,7 @@
 		    });
 		    this.ping = new Pulse({
 					audio: this.audio,
+					assets: this.assets,
 					removable: true
 				});
 
@@ -332,8 +351,9 @@
 		  }
 
 		  onEnablePinging() {
-		  	this.layers.paths.element.addEventListener('click', this.onPing);
+		  	this.layers.pings.element.addEventListener('click', this.onPing);
 		  	this.mouse.untrack(this.layers.paths.element);
+		  	this.layers.paths.element.after(this.layers.pings.element);
 		  }
 
 		  onPing(event) {
@@ -348,6 +368,7 @@
 		  onEnableDrawing() {
 		  	this.mouse.track(this.layers.paths.element);
 		  	this.layers.paths.element.removeEventListener('click', this.onPing);
+		  	this.layers.pings.element.after(this.layers.paths.element);
 		  }
 
 		  onSelectColor(event) {
@@ -397,17 +418,117 @@
 		  }
 		}
 
-		const game = new Game({
-			element: document.querySelector('#root'),
-			width: 15, height: 15,
-		});
-		const loop = () => {
-		  game.onEachFrame();
-		  requestAnimationFrame(loop);
-		};
+		class Rules {
+			constructor({ element, onExit }) {
+				this.element = element;
+				this.onExit = onExit;
+			}
 
-		game.onStart();
-		loop();
+			onStart() {
+				this.element.querySelector('button')
+					.addEventListener('click', this.onExit);
+			}
+		}
+
+		class Intro {
+			constructor({ element, onExit }) {
+				this.element = element;
+				this.onExit = onExit;
+			}
+
+			onStart() {
+				this.element.querySelector('button')
+					.addEventListener('click', this.onExit);
+			}
+		}
+
+		class Loading {
+			constructor({ element, loaded, onExit }) {
+				this.element = element;
+				this.loaded = loaded;
+				this.onExit = onExit;
+			}
+
+			onStart() {
+				this.loaded.then(this.onExit);
+			}
+		}
+
+		class AudioLoader {
+			constructor(context) {
+				this.context = context;
+				this.cache = {};
+			}
+
+			load(url) {
+				return new Promise((resolve, reject) => {
+					const request = new XMLHttpRequest();
+					request.open('GET', url, true);
+					request.responseType = 'arraybuffer';
+					request.onload = () => {
+						this.context.decodeAudioData(request.response, buffer => {
+							this.cache[url] = buffer;
+							resolve(buffer);
+						}, reject);
+					};
+					request.onerror = reject;
+					request.send();
+				});
+			}
+		}
+
+		class Scenes {
+			constructor({ element }) {
+				const audio = new AudioContext();
+				const loader = new AudioLoader(audio);
+				this.element = element;
+				this.game = new Game({
+					element: element.querySelector('.scene[data-scene="Game"]'),
+					assets: loader.cache,
+					audio,
+					width: 15,
+					height: 15,
+				});
+				this.loading = new Loading({
+					element: element.querySelector('.scene[data-scene="Loading"]'),
+					loaded: loader.load('./ameno.mp3'),
+					onExit: this.onEnter.bind(this, this.game)
+				}),
+				this.intro = new Intro({
+					element: element.querySelector('.scene[data-scene="Intro"]'),
+					onExit: this.onEnter.bind(this, this.loading)
+				});
+				this.rules = new Rules({
+					element: element.querySelector('.scene[data-scene="Rules"]'),
+					onExit: this.onEnter.bind(this, this.intro)
+				});
+				this.onEachFrame = this.onEachFrame.bind(this);
+			}
+
+			onStart() {
+				this.onEnter(this.rules);
+				this.onEachFrame();
+			}
+
+			onEnter(scene) {
+				this.current = scene;
+				this.current.onStart();
+				this.element.setAttribute('data-selected',
+					this.current.constructor.name);
+			}
+
+			onEachFrame() {
+				if (this.current && this.current.onEachFrame) {
+					this.current.onEachFrame();
+				}
+				requestAnimationFrame(this.onEachFrame);
+			}
+		}
+
+		const scenes = new Scenes({
+			element: document.querySelector('#root .scenes')
+		});
+		scenes.onStart();
 	</script>
 </body>
 </html>
