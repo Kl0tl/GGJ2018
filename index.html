@@ -9,9 +9,6 @@
 
 		.player {
 			position: absolute;
-			border-top: 10px solid black;
-			border-left: 5px solid transparent;
-			border-right: 5px solid transparent;
 		}
 
 		.player.exit {
@@ -75,6 +72,28 @@
 			border: 1px solid black;
 			margin: 0;
 		}
+
+		.maze-layer{
+			border: 1px solid black;
+		}
+
+		.maze-cell{
+			float: left;
+			box-sizing: border-box;
+			background: #888;
+		}
+
+		.layers{
+			position: relative;
+		}
+
+		.layers > *:not(.maze-layer){
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+		}
 	</style>
 </head>
 <body>
@@ -82,8 +101,8 @@
 	  <div class="layers">
 	  	<div class="maze-layer"></div>
 	  	<div class="pings-layer"></div>
-	  	<canvas class="paths-layer"></canvas>
-	  	<div class="players-layer"></div>
+	  	
+	  	<div class="players-layer"></div><canvas class="paths-layer"></canvas>
 	  </div>
 	  <div class="controls">
 	  	<div class="draw">
@@ -98,24 +117,9 @@
 	    </div>
 	  </div>
 	</div>
+	<script src="Maze.js"></script>
 	<script>
-		class Maze {
-			constructor({ audio, width, height }) {
-				this.width = width;
-				this.height = height;
-				this.cells = [];
-				this.start = {
-					position: { x: 0, y: 0 }
-				};
-				this.exit = {
-					position: { x: 0, y: 0 },
-					audio: {
-						source: null,
-						panner: null
-					}
-				};
-			}
-		}
+
 		class Mouse {
 			constructor() {
 				this.trail = {
@@ -170,19 +174,24 @@
 		}
 
 		class Player {
-			constructor({ position, orientation }) {
+			constructor({ position, orientation, size }) {
 				this.element = document.createElement('span');
 				this.element.classList.add('player');
-				this.element.style.top = position.y + 'px';
-				this.element.style.left = position.x + 'px';
+				this.size = size;
+				this.element.style.top = this.size * position.y + 'px';
+				this.element.style.left = this.size * position.x + 'px';
 				this.position = position;
 				this.orientation = orientation;
 				this.idle = true;
+
+				this.element.style.borderTop = this.size + "px solid black";
+				this.element.style.borderLeft = this.size/2 +"px solid transparent";
+				this.element.style.borderRight = this.size/2 +"px solid transparent";
 			}
 
 			move(alpha, { clockwise = true }) {
-				this.position.x += 10 * Math.cos(alpha) * (clockwise ? 1 : -1);
-				this.position.y += 10 * Math.sin(alpha) * (clockwise ? 1 : -1);
+				this.position.x += this.size * Math.cos(alpha) * (clockwise ? 1 : -1);
+				this.position.y += this.size * Math.sin(alpha) * (clockwise ? 1 : -1);
 				this.element.style.top = this.position.y + 'px';
 				this.element.style.left = this.position.x + 'px';
 				this.idle = false;
@@ -234,6 +243,7 @@
 		    this.audio = new AudioContext();
 		    this.mouse = new Mouse();
 		    this.element = element;
+		    this.cellSize = 30;
 		    this.layers = {
 		    	maze: {
 		    		element: element.querySelector('.layers .maze-layer')
@@ -255,13 +265,15 @@
 		    	}
 		    };
 		    this.layers.paths.context = this.layers.paths.element.getContext('2d');
-		    this.maze = new Maze({
-		      audio: this.audio,
-		      width, height
-		    });
+		    this.maze = new Maze({ audio: this.audio, width, height, cellSize: this.cellSize });
+
+		    this.layers.paths.element.width = width * this.cellSize;
+		    this.layers.paths.element.height = height * this.cellSize;
+
 		    this.player = new Player({
-		    	position: { x: 0, y: 0 },
-		    	orientation: 0
+		    	position: this.maze.startPos,
+		    	orientation: 0,
+		    	size: this.cellSize
 		    });
 		    this.ping = new Pulse({ removable: true });
 
@@ -280,6 +292,8 @@
 		    	.addEventListener('click', this.onSelectColor);
 		    this.mouse.track(this.layers.paths.element);
 		    this.layers.players.element.appendChild(this.player.element);
+		    this.maze.create();
+		    this.maze.render( this.layers.maze.element );
 		  }
 
 		  onEnablePinging() {
@@ -349,7 +363,7 @@
 
 		const game = new Game({
 			element: document.querySelector('#root'),
-			width: -1, height: -1,
+			width: 15, height: 15,
 		});
 		const loop = () => {
 		  game.onEachFrame();
