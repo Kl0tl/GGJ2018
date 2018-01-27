@@ -27,131 +27,13 @@
 	<section></section>
 	<p>Move with the arrow</p>
 	<button>Reset</button>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script type="text/javascript" src="Maze.js"></script>
+
 	<script type="text/javascript">
-		var width = 9;
-		var height = 9;
 
-		var sx = 0;
-		var sy = 0;
-
-		var ex = Math.random() * width | 0;
-		var ey = Math.random() * height | 0;
-
-		var cell = [];
-
-		var grid = [];
-		var direction = ["N","S","E","W"];
-
-		var dirValue = {
-            "N": [1,0,0,0],
-            "S": [0,1,0,0],
-            "E": [0,0,1,0],
-            "W": [0,0,0,1]
-		};
-
-		var dataDir = {
-            "N": {x:0, y:-1},
-            "S": {x:0, y:1},
-            "E": {x:1, y:0},
-            "W": {x:-1, y:0}
-		};
-
-		var opposite = {
-            "N": "S",
-            "S": "N",
-            "E": "W",
-            "W": "E"
-		};
-
-		var sources = [];
-
-		function init(){
-			width++;
-			height++;
-			$('h2 span').text(width - 9);
-			sx = 0;
-			sy = 0;
-			ex = Math.random() * width | 0;
-			ey = Math.random() * height | 0;
-			cell = [];
-			grid = [];
-			sources = [];
-			create();
-		}
-
-		function create(){
-			for(var i = 0; i < height; i++){
-				grid[i] = [];
-			  for(var j = 0; j < width; j++){
-			  	grid[i][j] = null;
-			  }
-			}
-
-			cell.push({x:sx,y:sy});
-
-			var t = 0;
-			while(cell.length > 0){
-				var index = cell.length -1;
-			  var currentCell = cell[index];
-
-			  var dir = direction.sort(function(){ return Math.random() < .5; });
-
-			  for(var i = 0; i < dir.length; i++){
-			  	var pickDir = dir[i];
-			  	var nx = currentCell.x + dataDir[pickDir].x;
-			    var ny = currentCell.y + dataDir[pickDir].y;
-
-			    if(nx >= 0 && nx < width && ny >= 0 && ny < height && !grid[ny][nx]){
-			    	if(grid[currentCell.y][currentCell.x]){
-			      	grid[currentCell.y][currentCell.x] = grid[currentCell.y][currentCell.x].map(function(e,i){
-			      		return !!e + dirValue[pickDir][i];
-			      	});
-			      }else{
-			      	grid[currentCell.y][currentCell.x] = dirValue[pickDir];
-			      }
-
-			      grid[ny][nx] = dirValue[opposite[pickDir]];
-			      cell.push({x:nx, y:ny});
-			      index = null;
-			      break;
-			    }
-			  }
-
-			  if(index != null) {
-			  	cell.splice(index, 1);
-			  }
-			}
-
-
-
-			render();
-		}
-
-
-		function render(){
-
-		  for(var x = 0; x < grid.length; x++){
-		    for(var y = 0; y < grid[x].length; y++)
-		      if(grid[x][y]){
-		        if(sx == x && sy == y) d.style.backgroundColor = "#0F0";
-		        if(ex == x && ey == y) d.style.backgroundColor = "#F00";
-		        if(!grid[x][y][0]) d.style.borderTop = "1px solid black";
-		        if(!grid[x][y][1]) d.style.borderBottom = "1px solid black";
-		        if(!grid[x][y][2]) d.style.borderRight = "1px solid black";
-		        if(!grid[x][y][3]) d.style.borderLeft = "1px solid black";
-		      }
-		      s.appendChild(d);
-		    }
-		  }
-
-		  $('section div').on('click', function(e){
-		    var spt = $(e.target).attr('id').split('_');
-		    var cy = parseInt(spt[1]);
-		    var cx = parseInt(spt[2]);
-		    console.log("click",cy,cx, grid[cy][cx]);
-		  });
-		}
+		var maze = new Maze(16, 16);
+		maze.create();
+		maze.render( document.querySelector('section') );
 
 		var keyCode = {
 		  "38" : {x:-1, y:0, dir:0}, //N
@@ -159,26 +41,6 @@
 		  "39" : {x:0, y:1, dir:2}, //E
 		  "37" : {x:0, y:-1, dir:3} //W
 		};
-
-		document.querySelector('button').addEventListener('click', function() {
-			create();
-		});
-
-		document.addEventListener('keydown', function(e){
-			var dir = keyCode[e.keyCode];
-		  if(grid[sx][sy][dir.dir]){
-		  	sy += dir.y;
-		    sx += dir.x;
-		    render();
-		  }
-
-		  if(sy == ey && sx == ex){
-		  	alert("You win !");
-		  	init();
-		  }
-		});
-
-		init();
 	</script>
 </body>
 </html>
