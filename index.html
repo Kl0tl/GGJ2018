@@ -1,46 +1,363 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Maze Generator</title>
-	<link rel="stylesheet" type="text/css" href="lab.css">
+	<title>GGJ 2018</title>
 	<style>
-		section{
-		  border: 1px solid black;
-		  margin: 0 auto;
-		  background: #fff;
+		.pings-layer, .players-layer {
+			position: relative;
 		}
 
-		div{
-		  float: left;
-		  width: 10px;
-		  height: 10px;
-		  box-sizing: border-box;
+		.player {
+			position: absolute;
+			border-top: 10px solid black;
+			border-left: 5px solid transparent;
+			border-right: 5px solid transparent;
 		}
-		p{
-			margin-top: 20px;
+
+		.player.exit {
+			animation: 1s ease-in fadeout;
+		}
+
+		@keyframes fadeout {
+			from { opacity: 1; }
+			to { opacity: 0; }
+		}
+
+		.pulse {
+			position: absolute;
+			width: 5px; height: 5px;
+			border-radius: 50%;
+			background-color: black;
+		}
+		.pulse:after {
+			content: '';
+			position: absolute;
+			top: 50%; left: 50%;
+			border-radius: 50%;
+			animation: 1s ease-in pulse infinite;
+			transform: translateX(-50%) translateY(-50%);
+		}
+
+		.players-layer .pulse {
+			width: 0; height: 0;
+			top: -5px;
+		}
+
+		@keyframes pulse {
+			from {
+				border: 1px solid rgba(0, 0, 0, 1);
+				width: 0px; height: 0px;
+			}
+			to {
+				border: 1px solid rgba(0, 0, 0, 0);
+				width: 25px; height: 25px;
+			}
+		}
+
+		.colors .color {
+			display: inline-block;
+			width: 15px;
+			height: 15px;
+			margin: 1px;
+		}
+
+		.color[data-color="chartreuse"] {
+			background-color: chartreuse;
+		}
+		.colors[data-selected="chartreuse"] .color[data-color="chartreuse"] {
+			border: 1px solid black;
+			margin: 0;
+		}
+		.color[data-color="magenta"] {
+			background-color: magenta;
+		}
+		.colors[data-selected="magenta"] .color[data-color="magenta"] {
+			border: 1px solid black;
+			margin: 0;
 		}
 	</style>
 </head>
 <body>
-	<h1>Perfect Maze Generator</h1>
-	<h2>Level <span>1</span></h2>
-	<section></section>
-	<p>Move with the arrow</p>
-	<button>Reset</button>
-	<script type="text/javascript" src="Maze.js"></script>
+	<div id="root">
+	  <div class="layers">
+	  	<div class="maze-layer"></div>
+	  	<div class="pings-layer"></div>
+	  	<canvas class="paths-layer"></canvas>
+	  	<div class="players-layer"></div>
+	  </div>
+	  <div class="controls">
+	  	<div class="draw">
+	    	<button>Draw</button>
+	    	<div class="colors" data-selected="chartreuse">
+	    		<span class="color" data-color="chartreuse"></span>
+	    		<span class="color" data-color="magenta"></span>
+	    	</div>
+	    </div>
+	    <div class="ping">
+	    	<button>Ping</button>
+	    </div>
+	  </div>
+	</div>
+	<script>
+		class Maze {
+			constructor({ audio, width, height }) {
+				this.width = width;
+				this.height = height;
+				this.cells = [];
+				this.start = {
+					position: { x: 0, y: 0 }
+				};
+				this.exit = {
+					position: { x: 0, y: 0 },
+					audio: {
+						source: null,
+						panner: null
+					}
+				};
+			}
+		}
+		class Mouse {
+			constructor() {
+				this.trail = {
+					start: { x: 0, y: 0 },
+					end: { x: 0, y: 0 }
+				};
+				this.down = false;
+				this.onMouseDown = this.onMouseDown.bind(this);
+				this.onMouseUp = this.onMouseUp.bind(this);
+				this.onMouseMove = this.onMouseMove.bind(this);
+			}
 
-	<script type="text/javascript">
+			flush() {
+				this.trail.start.x = this.trail.end.x;
+				this.trail.start.y = this.trail.end.y;
+			}
 
-		var maze = new Maze(16, 16);
-		maze.create();
-		maze.render( document.querySelector('section') );
+			track(element) {
+				element.addEventListener('mousedown', this.onMouseDown);
+				element.addEventListener('mouseup', this.onMouseUp);
+				element.addEventListener('mousemove', this.onMouseMove);
+				element.addEventListener('mouseleave', this.onMouseLeave);
+				this.tracking = true;
+			}
 
-		var keyCode = {
-		  "38" : {x:-1, y:0, dir:0}, //N
-		  "40" : {x:1, y:0, dir:1}, //S
-		  "39" : {x:0, y:1, dir:2}, //E
-		  "37" : {x:0, y:-1, dir:3} //W
+			untrack(element) {
+				element.removeEventListener('mousedown', this.onMouseDown);
+				element.removeEventListener('mouseup', this.onMouseUp);
+				element.removeEventListener('mousemove', this.onMouseMove);
+				element.removeEventListener('mouseleave', this.onMouseLeave);
+				this.tracking = false;
+			}
+
+			onMouseDown(event) {
+				this.down = true;
+				this.trail.start.x = event.offsetX;
+				this.trail.start.y = event.offsetY;
+			}
+
+			onMouseUp() {
+				this.down = false;
+			}
+
+			onMouseMove(event) {
+				this.trail.end.x = event.offsetX;
+				this.trail.end.y = event.offsetY;
+			}
+
+			onMouseLeave() {
+				this.down = false;
+			}
+		}
+
+		class Player {
+			constructor({ position, orientation }) {
+				this.element = document.createElement('span');
+				this.element.classList.add('player');
+				this.element.style.top = position.y + 'px';
+				this.element.style.left = position.x + 'px';
+				this.position = position;
+				this.orientation = orientation;
+				this.idle = true;
+			}
+
+			move(alpha, { clockwise = true }) {
+				this.position.x += 10 * Math.cos(alpha) * (clockwise ? 1 : -1);
+				this.position.y += 10 * Math.sin(alpha) * (clockwise ? 1 : -1);
+				this.element.style.top = this.position.y + 'px';
+				this.element.style.left = this.position.x + 'px';
+				this.idle = false;
+			}
+
+			rotate(alpha, { clockwise = true }) {
+				this.orientation += alpha * (clockwise ? 1 : -1);
+				this.element.style.transform = `rotateZ(${this.orientation}rad)`;
+				this.idle = false;
+			}
+
+			update(gamepad) {
+				if (this.idle) {
+					if (gamepad.buttons[4].pressed) { // L1
+						this.move(this.orientation, { clockwise: true });
+					} else if (gamepad.buttons[5].pressed) { // R1
+						this.move(this.orientation, { clockwise: false });
+					} else if (gamepad.buttons[12].pressed) { // up
+						this.move(this.orientation + Math.PI / 2, { clockwise: true });
+					} else if (gamepad.buttons[13].pressed) { // down
+						this.move(this.orientation + Math.PI / 2, { clockwise: false });
+					} else if (gamepad.buttons[14].pressed) { // left
+						this.rotate(Math.PI / 2, { clockwise: false });
+					} else if (gamepad.buttons[15].pressed) { // right
+						this.rotate(Math.PI / 2, { clockwise: true });
+					}
+				} else {
+					this.idle = gamepad.buttons.every(button => !button.pressed);
+				}
+			}
+		}
+		class Pulse {
+			constructor({ removable } = {}) {
+				this.element = document.createElement('span');
+				this.element.classList.add('pulse');
+				if (removable) {
+					this.onClick = this.onClick.bind(this);
+					this.element.addEventListener('click', this.onClick);
+				}
+			}
+
+			onClick() {
+				this.element.remove();
+			}
+		}
+
+		class Game {
+		  constructor({ element, width, height }) {
+		    this.audio = new AudioContext();
+		    this.mouse = new Mouse();
+		    this.element = element;
+		    this.layers = {
+		    	maze: {
+		    		element: element.querySelector('.layers .maze-layer')
+		    	},
+		    	pings: {
+		    		element: element.querySelector('.layers .pings-layer')
+		    	},
+		    	paths: {
+		    		element: element.querySelector('.layers .paths-layer'),
+		    		color: element.querySelector('.controls .draw .colors')
+		    			.getAttribute('data-selected'),
+		    		radius: 4
+		    	},
+		    	players: {
+		    		element: element.querySelector('.layers .players-layer'),
+		    		lifetime: 3000,
+		    		cooldown: 30000,
+		    		lastPingAt: 0,
+		    	}
+		    };
+		    this.layers.paths.context = this.layers.paths.element.getContext('2d');
+		    this.maze = new Maze({
+		      audio: this.audio,
+		      width, height
+		    });
+		    this.player = new Player({
+		    	position: { x: 0, y: 0 },
+		    	orientation: 0
+		    });
+		    this.ping = new Pulse({ removable: true });
+
+		    this.onEnablePinging = this.onEnablePinging.bind(this);
+		    this.onEnableDrawing = this.onEnableDrawing.bind(this);
+		    this.onSelectColor = this.onSelectColor.bind(this);
+		    this.onPing = this.onPing.bind(this);
+		  }
+
+		  onStart() {
+		  	this.element.querySelector('.controls .ping button')
+		  		.addEventListener('click', this.onEnablePinging);
+		    this.element.querySelector('.controls .draw button')
+		    	.addEventListener('click', this.onEnableDrawing);
+		    this.element.querySelector('.controls .draw .colors')
+		    	.addEventListener('click', this.onSelectColor);
+		    this.mouse.track(this.layers.paths.element);
+		    this.layers.players.element.appendChild(this.player.element);
+		  }
+
+		  onEnablePinging() {
+		  	this.layers.paths.element.addEventListener('click', this.onPing);
+		  	this.mouse.untrack(this.layers.paths.element);
+		  }
+
+		  onPing(event) {
+		  	this.ping.element.style.left = event.offsetX - 2.5 + 'px';
+		  	this.ping.element.style.top = event.offsetY - 2.5 + 'px';
+		  	if (!this.ping.element.parentElement) {
+		  		this.layers.pings.element.appendChild(this.ping.element);
+		  	}
+		  }
+
+		  onEnableDrawing() {
+		  	this.mouse.track(this.layers.paths.element);
+		  	this.layers.paths.element.removeEventListener('click', this.onPing);
+		  }
+
+		  onSelectColor(event) {
+		  	const color = event.target.getAttribute('data-color');
+		  	if (color) {
+		  		this.layers.paths.color = color;
+		  		event.target.parentElement.setAttribute('data-selected', color);
+		  		if (!this.mouse.tracking) this.onEnableDrawing();
+		  	}
+		  }
+
+		  onEachFrame() {
+		  	const gamepad = navigator.getGamepads()[0];
+		  	if (gamepad) {
+		  		const canPing = this.layers.players.lastPingAt + this.layers.players.cooldown < Date.now();
+		  		const isPinging = [0, 1, 2, 3].some(index => {
+		  			return gamepad.buttons[index].pressed;
+		  		});
+
+		  		if (this.player.idle && isPinging && canPing) {
+		  			const ghost = new Player(this.player);
+		  			const pulse = new Pulse({ removable: false });
+		  			ghost.element.appendChild(pulse.element);
+		  			this.layers.players.element.appendChild(ghost.element);
+		  			this.player.idle = false;
+		  			this.layers.players.lastPingAt = Date.now();
+		  			setTimeout(() => {
+		  				ghost.element.classList.add('exit');
+		  				ghost.element.addEventListener('animationend',
+		  					() => ghost.element.remove());
+		  			}, this.layers.players.lifetime);
+		  		} else {
+		  			this.player.update(gamepad);
+		  		}
+		  	}
+		  	if (this.mouse.tracking && this.mouse.down) {
+		  		this.layers.paths.context.strokeStyle = this.layers.paths.color;
+		  		this.layers.paths.lineWidth = this.layers.paths.radius;
+		  		this.layers.paths.context.beginPath();
+		  			this.layers.paths.context.moveTo(this.mouse.trail.start.x,
+		  				this.mouse.trail.start.y);
+		  			this.layers.paths.context.lineTo(this.mouse.trail.end.x,
+		  				this.mouse.trail.end.y);
+		  			this.layers.paths.context.stroke();
+		  		this.mouse.flush();
+		  	}
+		  }
+		}
+
+		const game = new Game({
+			element: document.querySelector('#root'),
+			width: -1, height: -1,
+		});
+		const loop = () => {
+		  game.onEachFrame();
+		  requestAnimationFrame(loop);
 		};
+
+		game.onStart();
+		loop();
 	</script>
 </body>
 </html>
