@@ -1,0 +1,18 @@
+JoueurManette/BlindPlayer :
+	3C : Character 	: 	Se déplace dans le maze
+						Entends les sons du maze
+						Peut ping sa position sur la map
+		Camera 		: none
+		Controls 	: XBOX PAD : Arrow UP : Avancer
+								 Arrow DOWN : Reculer
+								 Arrow RIGHT : Tourner de 90° sur la droite
+								 Arrow LEFT : Tourner de 90° sur la gauche
+								 LT : Strafe Gauche
+								 RT : Strafe Droit
+
+JoueurClavier/MuteDeafPlayer : 
+	3C : Character 	:	Voir la carte du maze
+						Créer un son de ping dans le maze
+						Annoter sur la carte
+		Camera		:	Carte du maze
+		Controls	:	Souris

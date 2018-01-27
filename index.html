@@ -44,24 +44,24 @@
 		var direction = ["N","S","E","W"];
 
 		var dirValue = {
-			"N": [1,0,0,0],
-		  "S": [0,1,0,0],
-		  "E": [0,0,1,0],
-		  "W": [0,0,0,1]
+            "N": [1,0,0,0],
+            "S": [0,1,0,0],
+            "E": [0,0,1,0],
+            "W": [0,0,0,1]
 		};
 
 		var dataDir = {
-			"N": {x:0, y:-1},
-		  "S": {x:0, y:1},
-		  "E": {x:1, y:0},
-		  "W": {x:-1, y:0}
+            "N": {x:0, y:-1},
+            "S": {x:0, y:1},
+            "E": {x:1, y:0},
+            "W": {x:-1, y:0}
 		};
 
 		var opposite = {
-			"N": "S",
-		  "S": "N",
-		  "E": "W",
-		  "W": "E"
+            "N": "S",
+            "S": "N",
+            "E": "W",
+            "W": "E"
 		};
 
 		var sources = [];
@@ -130,14 +130,9 @@
 
 
 		function render(){
-		  var s = document.querySelector('section');
-		  s.innerHTML = "";
-		  s.style.width = width * 10 + "px";
-		  s.style.height = height * 10 + "px";
 
 		  for(var x = 0; x < grid.length; x++){
-		    for(var y = 0; y < grid[x].length; y++){
-		      var d = document.createElement('div');
+		    for(var y = 0; y < grid[x].length; y++)
 		      if(grid[x][y]){
 		        if(sx == x && sy == y) d.style.backgroundColor = "#0F0";
 		        if(ex == x && ey == y) d.style.backgroundColor = "#F00";
@@ -145,7 +140,6 @@
 		        if(!grid[x][y][1]) d.style.borderBottom = "1px solid black";
 		        if(!grid[x][y][2]) d.style.borderRight = "1px solid black";
 		        if(!grid[x][y][3]) d.style.borderLeft = "1px solid black";
-		        d.id = "_"+x+"_"+y;
 		      }
 		      s.appendChild(d);
 		    }
