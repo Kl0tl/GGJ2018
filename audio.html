@@ -1,45 +1,72 @@
 <button id="left">Left</button>
 <button id="right">Right</button>
+<script src="binaural-fir.min.js"></script>
+<script src="complete_hrtfs.js"></script>
 
 <script>
 
 var x = window.innerWidth / 2;
-var z = window.innerHeight / 2;
+var z = window.innerWidth / 2;
 var y = 0;
 
 //var left = -10000;
 //var right = 10000;
-var scale = 1;
+var scale = 0.01;
 
 var ctx = new AudioContext();
 var source = ctx.createBufferSource();
 var panner = ctx.createPanner();
+var listener = ctx.listener;
+
+// HRTF files loading
+for (var i = 0; i < hrtfs.length; i++) {
+    var buffer = ctx.createBuffer(2, 512, 44100);
+    var bufferChannelLeft = buffer.getChannelData(0);
+    var bufferChannelRight = buffer.getChannelData(1);
+    for (var e = 0; e < hrtfs[i].fir_coeffs_left.length; e++) {
+        bufferChannelLeft[e] = hrtfs[i].fir_coeffs_left[e];
+        bufferChannelRight[e] = hrtfs[i].fir_coeffs_right[e];
+    }
+    hrtfs[i].buffer = buffer;
+}
+
+var binauralFIRNode = new BinauralFIR({audioContext: ctx});
+binauralFIRNode.HRTFDataset = hrtfs;
 
 var request = new XMLHttpRequest();
-request.open('GET', './viper.ogg', true);
+request.open('GET', './ameno.mp3', true);
 request.responseType = 'arraybuffer';
 request.onload = function () {
   ctx.decodeAudioData(request.response, function (buffer) {
     source.buffer = buffer;
-    source.connect(panner);
-    panner.connect(ctx.destination);
-    source.connect(ctx.destination);
+    source.connect(binauralFIRNode.input);
+    binauralFIRNode.connect(ctx.destination);
+    // panner.connect(ctx.destination);
     source.loop = true;
     source.start();
   }, console.error);
 };
 request.send();
 
-panner.setPosition(x * scale, y, z * scale);
-ctx.listener.setPosition(x, y, z);
-ctx.listener.setOrientation(0, 0, 1, 0, 1, 0)
+binauralFIRNode.setPosition(90, 0, 2);
+
+// panner.setPosition(x, y, z);
+// binauralFIRNode.distanceModel = "inverse";
+// binauralFIRNode.coneInnerAngle = 360;
+// binauralFIRNode.coneOuterAngle = 360;
+// binauralFIRNode.coneOuterGain = 0;
+listener.setPosition(x / 2 * scale, y, z / 4 * scale);
+listener.setOrientation(0, 0, -1, 0, 1, 0)
 
 //ctx.listener.setPosition(720, 366, 300);
 //panner.setPosition(720, 366, 300);
 
 document.addEventListener('mousemove', function (event) {
   // ctx.listener.setPosition(event.clientX / 2 * scale, y, event.clientY / 2 * scale);
-  panner.setPosition(event.clientX / 2 * scale, y, event.clientY / 2 * scale);
+  // panner.setPosition(event.clientX / 2 * scale, y, event.clientY / 2 * scale);
+  console.log(binauralFIRNode.getPosition());
+  console.log("Panner - "+binauralFIRNode.getPosition());
+  console.log("Listener - X: "+listener.positionX.value+" / Y: "+listener.positionY.value+" / Z: "+listener.positionZ.value);
 });
 
 // document.querySelector('#left')
