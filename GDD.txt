@@ -24,3 +24,8 @@ La sortie n'est pas visible sur la carte.
 
 Maze
 La sortie du labyrinthe émets un son.
+
+
+Sounds : 
+	Sortie : exit.wav
+	Ping JoueurClavier : comehere.wav
