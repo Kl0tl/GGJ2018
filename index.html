@@ -117,32 +117,10 @@
 	    </div>
 	  </div>
 	</div>
-<<<<<<< HEAD
 	<script src="Maze.js"></script>
-	<script>
-
-=======
 	<script src="binaural-fir.min.js"></script>
 	<script src="complete_hrtfs.js"></script>
 	<script>
-		class Maze {
-			constructor({ audio, width, height }) {
-				this.width = width;
-				this.height = height;
-				this.cells = [];
-				this.start = {
-					position: { x: 0, y: 0 }
-				};
-				this.exit = {
-					position: { x: 0, y: 0 },
-					audio: {
-						source: audio.createBufferSource(),
-						panner: new BinauralFIR({audioContext: audio})
-					}
-				};
-			}
-		}
->>>>>>> 88ecfc00b0aa0f265d007bb72ad96ee0568318cd
 		class Mouse {
 			constructor() {
 				this.trail = {
@@ -323,10 +301,6 @@
 						}
 						hrtfs[i].buffer = buffer;
 				}
-		    this.maze = new Maze({
-		      audio: this.audio,
-		      width, height
-		    });
 
 		    this.player = new Player({
 		    	position: this.maze.startPos,
