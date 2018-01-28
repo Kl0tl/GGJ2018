@@ -526,10 +526,10 @@
 				const distanceX = playerX - node.position.x;
 				const distanceY = playerY - node.position.y;
 				const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-				const angle = Math.atan2(distanceX, distanceY);
+				const angle = Math.atan2(distanceX, distanceY) + this.player.orientation;
 				const distanceRef = 30, distanceRolloff = 0.5;
 				node.volume.gain.value = distanceRef / (distanceRef + distanceRolloff * (distance - distanceRef));
-				node.panner.setPosition(angle * 180 / Math.PI, 0, 0);
+				node.panner.setPosition(angle * 180 / Math.PI, 0, 1);
 			}
 
 		  onEnableDrawing() {
