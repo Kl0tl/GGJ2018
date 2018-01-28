@@ -395,7 +395,7 @@
 		    		element: element.querySelector('.layers .paths-layer'),
 		    		color: element.querySelector('.controls .draw .colors')
 		    			.getAttribute('data-selected'),
-		    		radius: 4
+		    		radius: 8
 		    	},
 		    	players: {
 		    		element: element.querySelector('.layers .players-layer'),
@@ -531,7 +531,7 @@
 		  	}
 		  	if (this.mouse.tracking && this.mouse.down) {
 		  		this.layers.paths.context.strokeStyle = this.layers.paths.color;
-		  		this.layers.paths.lineWidth = this.layers.paths.radius;
+		  		this.layers.paths.context.lineWidth = this.layers.paths.radius;
 		  		this.layers.paths.context.beginPath();
 		  			this.layers.paths.context.moveTo(this.mouse.trail.start.x,
 		  				this.mouse.trail.start.y);
