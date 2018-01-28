@@ -444,6 +444,12 @@
 				this.maze.exit.source.buffer = this.assets['./sounds/exit.wav'];
 				this.maze.exit.source.start();
 		    this.maze.render( this.layers.maze.element );
+
+				const ambiant = this.audio.createBufferSource();
+				ambiant.buffer = this.assets['./sounds/ambient_main.wav'];
+				ambiant.loop = true;
+				ambiant.connect(this.audio.destination);
+				ambiant.start();
 		  }
 
 		  onEnablePinging() {
