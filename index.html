@@ -297,10 +297,10 @@
 			}
 
 			move(alpha, { clockwise = true }) {
-				this.position.x += this.size * Math.cos(alpha) * (clockwise ? 1 : -1);
-				this.position.y += this.size * Math.sin(alpha) * (clockwise ? 1 : -1);
-				this.element.style.top = this.position.y + 'px';
-				this.element.style.left = this.position.x + 'px';
+				this.position.x += Math.cos(alpha) * (clockwise ? 1 : -1);
+				this.position.y += Math.sin(alpha) * (clockwise ? 1 : -1);
+				this.element.style.top = this.size * this.position.y + 'px';
+				this.element.style.left = this.size * this.position.x + 'px';
 				this.idle = false;
 			}
 
