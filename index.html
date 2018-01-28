@@ -17,11 +17,15 @@
 			position: relative;
 		}
 
+		.paths-layer {
+			margin: 1px;
+		}
+
 		.player {
 			position: absolute;
 		}
 
-		.player.exit {
+		.player.exit, .pulse.exit {
 			animation: 1s ease-in fadeout;
 		}
 
@@ -167,7 +171,7 @@
 					voit la carte de ce labyrinthe. Le but est simple, le joueur enfermé doit sortir du labyrinthe.
 				</p>
 				<p>
-					Le joueur enfermé dans le labyrinthe doit prendre la manette ainsi que s'équiper du casque audio, 
+					Le joueur enfermé dans le labyrinthe doit prendre la manette ainsi que s'équiper du casque audio,
 					et se placer derrière l'écran. Ce joueur ne peut pas voir l'écran de jeu !
 					Il peut se déplacer grâce au flèche directionnelle et les gachettes (strafe). Il peut également indiquer
 					sa position dans le labyrinthe en appuyant sur (A).
@@ -218,7 +222,7 @@
 						<li>Vous pouvez faire un signal sonore en cliquant sur le bouton DRAW puis en cliquant sur la carte.</li>
 					</ul>
 				</div>
-				
+
 			</div>
 			<div class="scene" data-scene="outro"></div>
 		</div>
@@ -352,31 +356,42 @@
 			}
 		}
 		class Pulse {
-			constructor({ audio, assets, removable } = {}) {
+			constructor() {
 				this.element = document.createElement('span');
 				this.element.classList.add('pulse');
-				if (removable) {
-					this.onClick = this.onClick.bind(this);
-					this.element.addEventListener('click', this.onClick);
-				}
-				this.audio = {
-					source: audio.createBufferSource(),
-					volume: audio.createGain(),
-					panner: new BinauralFIR({audioContext: audio})
-				};
-				this.audio.panner.HRTFDataset = hrtfs;
-				this.audio.source.buffer = assets['./ameno.mp3'];
-				this.audio.source.connect(this.audio.volume);
-				this.audio.volume.connect(this.audio.panner.input);
-				this.audio.panner.connect(audio.destination);
-				this.audio.source.loop = true;
-				this.audio.panner.setPosition(0, 0, 0);
 			}
 
-			onClick(event) {
-				this.element.remove();
-				this.audio.source.stop();
-				event.stopPropagation();
+			get position() {
+				return {
+					x: parseFloat(this.element.style.left, 10),
+					y: parseFloat(this.element.style.top, 10)
+				};
+			}
+
+			sonorize({ audio, assets }) {
+
+				if (this.source) {
+					this.element.classList.remove('exit');
+					this.source.onended = null;
+					try { this.source.stop() } catch (_) {}
+				}
+
+				this.source = audio.createBufferSource(),
+				this.volume = audio.createGain(),
+				this.panner = new BinauralFIR({audioContext: audio})
+				this.panner.HRTFDataset = hrtfs;
+				this.source.buffer = assets['./sounds/comehere.wav'];
+				this.source.connect(this.volume);
+				this.volume.connect(this.panner.input);
+				this.panner.connect(audio.destination);
+				this.source.loop = false;
+				this.source.onended = () => {
+					this.element.classList.add('exit');
+					this.element.addEventListener('animationend', () => {
+						this.element.remove();
+						this.element.classList.remove('exit');
+					});
+				};
 			}
 		}
 
@@ -401,7 +416,7 @@
 		    		element: element.querySelector('.layers .paths-layer'),
 		    		color: element.querySelector('.controls .draw .colors')
 		    			.getAttribute('data-selected'),
-		    		radius: 4
+		    		radius: 8
 		    	},
 		    	players: {
 		    		element: element.querySelector('.layers .players-layer'),
@@ -411,10 +426,12 @@
 		    	}
 		    };
 		    this.layers.paths.context = this.layers.paths.element.getContext('2d');
-		    this.maze = new Maze({ audio: this.audio, width, height, cellSize: this.cellSize });
+		    this.maze = new Maze({ audio: this.audio, assets, width, height, cellSize: this.cellSize });
 
 		    this.layers.main.element.style.width 	= 2 + width * this.cellSize + "px";
 		    this.layers.main.element.style.height 	= 2 + height * this.cellSize + "px";
+				this.layers.paths.element.width = width * this.cellSize;
+				this.layers.paths.element.height = height * this.cellSize;
 
 				// HRTF files loading
 				for (var i = 0; i < hrtfs.length; i++) {
@@ -440,11 +457,7 @@
 					orientation: 0,
 					size: this.cellSize
 				});
-				this.ping = new Pulse({
-					audio: this.audio,
-					assets: this.assets,
-					removable: true
-				});
+				this.ping = new Pulse();
 		  	this.element.querySelector('.controls .ping button')
 		  		.addEventListener('click', this.onEnablePinging);
 		    this.element.querySelector('.controls .draw button')
@@ -454,7 +467,16 @@
 		    this.mouse.track(this.layers.paths.element);
 		    this.layers.players.element.appendChild(this.player.element);
 		    this.maze.create();
+				this.spatialize(this.maze.exit);
+				this.maze.exit.source.buffer = this.assets['./sounds/exit.wav'];
+				this.maze.exit.source.start();
 		    this.maze.render( this.layers.maze.element );
+
+				const ambiant = this.audio.createBufferSource();
+				ambiant.buffer = this.assets['./sounds/ambient_main.wav'];
+				ambiant.loop = true;
+				ambiant.connect(this.audio.destination);
+				ambiant.start();
 		  }
 
 		  onEnablePinging() {
@@ -467,23 +489,24 @@
 				const wasMounted = this.ping.element.parentElement;
 		  	this.ping.element.style.left = event.offsetX - 2.5 + 'px';
 		  	this.ping.element.style.top = event.offsetY - 2.5 + 'px';
+				this.ping.sonorize({ assets: this.assets, audio: this.audio });
 				this.spatialize(this.ping);
+				this.ping.source.start();
 		  	if (!wasMounted) {
 		  		this.layers.pings.element.appendChild(this.ping.element);
-					this.ping.audio.source.start();
 		  	}
 		  }
 
 			spatialize(node) {
 				const playerX = this.player.position.x * this.player.size + this.player.size / 2;
 				const playerY = this.player.position.y * this.player.size + this.player.size / 2;
-				const distanceX = playerX - parseFloat(node.element.style.left);
-				const distanceY = playerY - parseFloat(node.element.style.top);
+				const distanceX = playerX - node.position.x;
+				const distanceY = playerY - node.position.y;
 				const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
 				const angle = Math.atan2(distanceX, distanceY);
 				const distanceRef = 30, distanceRolloff = 0.5;
-				node.audio.volume.gain.value = distanceRef / (distanceRef + distanceRolloff * (distance - distanceRef));
-				node.audio.panner.setPosition(angle * 180 / Math.PI, 0, 0);
+				node.volume.gain.value = distanceRef / (distanceRef + distanceRolloff * (distance - distanceRef));
+				node.panner.setPosition(angle * 180 / Math.PI, 0, 0);
 			}
 
 		  onEnableDrawing() {
@@ -511,7 +534,7 @@
 
 		  		if (this.player.idle && isPinging && canPing) {
 		  			const ghost = new Player(this.player);
-		  			const pulse = new Pulse({ removable: false });
+		  			const pulse = new Pulse();
 		  			ghost.element.appendChild(pulse.element);
 		  			this.layers.players.element.appendChild(ghost.element);
 		  			this.player.idle = false;
@@ -524,11 +547,12 @@
 		  		} else {
 		  			this.player.update(gamepad, this.maze.grid);
 						if (this.ping.element.parentElement) this.spatialize(this.ping);
+						this.spatialize(this.maze.exit);
 		  		}
 		  	}
 		  	if (this.mouse.tracking && this.mouse.down) {
 		  		this.layers.paths.context.strokeStyle = this.layers.paths.color;
-		  		this.layers.paths.lineWidth = this.layers.paths.radius;
+		  		this.layers.paths.context.lineWidth = this.layers.paths.radius;
 		  		this.layers.paths.context.beginPath();
 		  			this.layers.paths.context.moveTo(this.mouse.trail.start.x,
 		  				this.mouse.trail.start.y);
@@ -613,7 +637,11 @@
 				});
 				this.loading = new Loading({
 					element: element.querySelector('.scene[data-scene="Loading"]'),
-					loaded: loader.load('./ameno.mp3'),
+					loaded: Promise.all([
+						loader.load('./sounds/ambient_main.wav'),
+						loader.load('./sounds/comehere.wav'),
+						loader.load('./sounds/exit.wav')
+					]),
 					onExit: this.onEnter.bind(this, this.game)
 				}),
 				this.intro = new Intro({
