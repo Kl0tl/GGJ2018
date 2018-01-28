@@ -294,6 +294,7 @@
 				this.size = size;
 				this.element.style.top = this.size * position.y + 'px';
 				this.element.style.left = this.size * position.x + 'px';
+				this.element.style.transform = `rotateZ(${orientation}rad)`;
 				this.position = position;
 				this.orientation = orientation;
 				this.idle = true;
