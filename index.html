@@ -9,7 +9,8 @@
 		.scenes[data-selected="Rules"] .scene[data-scene="Rules"],
 		.scenes[data-selected="Intro"] .scene[data-scene="Intro"],
 		.scenes[data-selected="Loading"] .scene[data-scene="Loading"],
-		.scenes[data-selected="Game"] .scene[data-scene="Game"] {
+		.scenes[data-selected="Game"] .scene[data-scene="Game"],
+		.scenes[data-selected="Outro"] .scene[data-scene="Outro"] {
 			display: block;
 		}
 
@@ -224,7 +225,9 @@
 				</div>
 
 			</div>
-			<div class="scene" data-scene="outro"></div>
+			<div class="scene" data-scene="Outro">
+				<button>Retry</button>
+			</div>
 		</div>
 	</div>
 	<script src="Maze.js"></script>
@@ -315,7 +318,7 @@
 				}else if( dx === -1 ){
 					canMove = grid[this.position.y][this.position.x][3];
 				}
-				
+
 
 				if( canMove ){
 					var nx = this.position.x + dx;
@@ -326,7 +329,7 @@
 					this.element.style.left = this.size * this.position.x + 'px';
 					this.idle = false;
 				}
-				
+
 			}
 
 			rotate(alpha, { clockwise = true }) {
@@ -396,7 +399,7 @@
 		}
 
 		class Game {
-		  constructor({ element, assets, audio, width, height }) {
+		  constructor({ element, assets, audio, width, height, onExit }) {
 		  	this.assets = assets;
 		  	this.audio = audio;
 		    this.mouse = new Mouse();
@@ -427,6 +430,13 @@
 		    };
 		    this.layers.paths.context = this.layers.paths.element.getContext('2d');
 		    this.maze = new Maze({ audio: this.audio, assets, width, height, cellSize: this.cellSize });
+				this.player = new Player({
+					position: this.maze.startPos,
+					orientation: 0,
+					size: this.cellSize
+				});
+				this.ping = new Pulse();
+				this.onExit = onExit;
 
 		    this.layers.main.element.style.width 	= 2 + width * this.cellSize + "px";
 		    this.layers.main.element.style.height 	= 2 + height * this.cellSize + "px";
@@ -452,12 +462,6 @@
 		  }
 
 		  onStart() {
-				this.player = new Player({
-					position: this.maze.startPos,
-					orientation: 0,
-					size: this.cellSize
-				});
-				this.ping = new Pulse();
 		  	this.element.querySelector('.controls .ping button')
 		  		.addEventListener('click', this.onEnablePinging);
 		    this.element.querySelector('.controls .draw button')
@@ -468,15 +472,13 @@
 		    this.layers.players.element.appendChild(this.player.element);
 		    this.maze.create();
 				this.spatialize(this.maze.exit);
-				this.maze.exit.source.buffer = this.assets['./sounds/exit.wav'];
 				this.maze.exit.source.start();
 		    this.maze.render( this.layers.maze.element );
-
-				const ambiant = this.audio.createBufferSource();
-				ambiant.buffer = this.assets['./sounds/ambient_main.wav'];
-				ambiant.loop = true;
-				ambiant.connect(this.audio.destination);
-				ambiant.start();
+				this.ambiant = this.audio.createBufferSource();
+				this.ambiant.buffer = this.assets['./sounds/ambient_main.wav'];
+				this.ambiant.loop = true;
+				this.ambiant.connect(this.audio.destination);
+				this.ambiant.start();
 		  }
 
 		  onEnablePinging() {
@@ -546,8 +548,17 @@
 		  			}, this.layers.players.lifetime);
 		  		} else {
 		  			this.player.update(gamepad, this.maze.grid);
-						if (this.ping.element.parentElement) this.spatialize(this.ping);
-						this.spatialize(this.maze.exit);
+						if (this.player.position.x === this.maze.exit.position.x &&
+							this.player.position.y === this.maze.exit.position.y) {
+								this.maze.exit.source.stop();
+								this.ambiant.stop();
+								this.ping.element.remove();
+								this.ping.element.classList.remove('exit');
+								this.onExit();
+						} else {
+								if (this.ping.element.parentElement) this.spatialize(this.ping);
+								this.spatialize(this.maze.exit);
+						}
 		  		}
 		  	}
 		  	if (this.mouse.tracking && this.mouse.down) {
@@ -600,6 +611,18 @@
 			}
 		}
 
+		class Outro {
+			constructor({ element, onExit }) {
+				this.element = element;
+				this.onExit = onExit;
+			}
+
+			onStart() {
+				this.element.querySelector('button')
+					.addEventListener('click', this.onExit);
+			}
+		}
+
 		class AudioLoader {
 			constructor(context) {
 				this.context = context;
@@ -628,12 +651,17 @@
 				const audio = new AudioContext();
 				const loader = new AudioLoader(audio);
 				this.element = element;
+				this.outro = new Outro({
+					element: element.querySelector('.scene[data-scene="Outro"]'),
+					onExit: () => this.onEnter(this.intro)
+				});
 				this.game = new Game({
 					element: element.querySelector('.scene[data-scene="Game"]'),
 					assets: loader.cache,
 					audio,
 					width: 15,
 					height: 15,
+					onExit: () => this.onEnter(this.outro)
 				});
 				this.loading = new Loading({
 					element: element.querySelector('.scene[data-scene="Loading"]'),
@@ -642,15 +670,15 @@
 						loader.load('./sounds/comehere.wav'),
 						loader.load('./sounds/exit.wav')
 					]),
-					onExit: this.onEnter.bind(this, this.game)
+					onExit: () => this.onEnter(this.game)
 				}),
 				this.intro = new Intro({
 					element: element.querySelector('.scene[data-scene="Intro"]'),
-					onExit: this.onEnter.bind(this, this.loading)
+					onExit: () => this.onEnter(this.loading)
 				});
 				this.rules = new Rules({
 					element: element.querySelector('.scene[data-scene="Rules"]'),
-					onExit: this.onEnter.bind(this, this.intro)
+					onExit: () => this.onEnter(this.intro)
 				});
 				this.onEachFrame = this.onEachFrame.bind(this);
 			}

@@ -4,6 +4,7 @@ class Maze {
         this.width = width;
         this.height = height;
         this.audio = audio;
+        this.assets = assets;
         this.startPos = { x: Math.random() * width | 0, y: Math.random() * height | 0 };
         this.cellSize = cellSize;
 
@@ -11,17 +12,7 @@ class Maze {
 
         this.exit = {
           position: { x: 0, y: 0 },
-  				source: audio.createBufferSource(),
-  				volume: audio.createGain(),
-  				panner: new BinauralFIR({audioContext: audio})
         };
-
-				this.exit.panner.HRTFDataset = hrtfs;
-				this.exit.source.buffer = assets['./sounds/exit.wav'];
-				this.exit.source.connect(this.exit.volume);
-				this.exit.volume.connect(this.exit.panner.input);
-				this.exit.panner.connect(this.audio.destination);
-				this.exit.source.loop = true;
 
         this.dirValue = {
             "N": [1,0,0,0],
@@ -110,6 +101,15 @@ class Maze {
               this.create();
             }else{
               this.exit.position = this.deadEnds[ pickFarthestIndex ];
+              this.exit.source = this.audio.createBufferSource();
+              this.exit.volume = this.audio.createGain();
+              this.exit.panner = new BinauralFIR({audioContext: this.audio});
+      				this.exit.panner.HRTFDataset = hrtfs;
+      				this.exit.source.connect(this.exit.volume);
+      				this.exit.volume.connect(this.exit.panner.input);
+      				this.exit.panner.connect(this.audio.destination);
+      				this.exit.source.loop = true;
+              this.exit.source.buffer = this.assets['./sounds/exit.wav'];
             }
       }
 
