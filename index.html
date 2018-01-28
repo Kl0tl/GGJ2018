@@ -95,6 +95,7 @@
 
 		.layers{
 			position: relative;
+			overflow: hidden;
 		}
 
 		.layers > *:not(.maze-layer){
@@ -104,6 +105,56 @@
 			right: 0;
 			bottom: 0;
 		}
+
+		.scene{
+			font-size: 22px;
+		}
+
+		button{
+			padding: 15px;
+			font-size: 24px;
+		}
+
+		.scene h1{
+			margin-top: 0;
+		}
+
+		body{
+			background: #eee;
+		}
+
+		h2{
+			margin-top: 0;
+		}
+
+		div#root{
+			width: 1080px;
+			margin: auto;
+			background: #fff;
+			padding: 20px;
+			box-sizing: border-box;
+			border: 1px solid black;
+		}
+
+		.controls{
+			display: flex;
+			padding: 20px 0;
+		}
+
+		.controls div{
+			margin-right: 20px;
+		}
+
+		.layers{
+			display: inline-block;
+		}
+
+		.text{
+			display: inline-block;
+			width: 330px;
+			padding: 10px;
+			vertical-align: top;
+		}
 	</style>
 	<meta charset="utf-8">
 </head>
@@ -111,9 +162,11 @@
 	<div id="root">
 		<div class="scenes" data-selected="Rules">
 			<div class="scene" data-scene="Rules">
-				<h1><%-Le nom du game%></h1>
+				<h1>Sunan Wasan</h1>
 				<p>
-					Bienvenue, tout d'abord <%-Le nom du jeu %> est un jeu coopératif pour 2 joueurs.
+					Bienvenue, Sunan Wasan est un <strong>jeu coopératif</strong> pour 2 joueurs.
+				</p>
+				<p>
 					Un joueur est enfermé dans un labyrinthe sans lumière pendant que le second joueur
 					voit la carte de ce labyrinthe. Le but est simple, le joueur enfermé doit sortir du labyrinthe.
 				</p>
@@ -128,7 +181,7 @@
 					il peut faire plusieurs choses, créer un signal sonore (en cliquant sur le bouton Ping puis sur la carte).
 					Il peut également dessiner sur la carte.
 				</p>
-				<button>Suivant</button>
+				<button>Suivant ></button>
 			</div>
 			<div class="scene" data-scene="Intro">
 				<h1>Etes vous pret ?</h1>
@@ -144,24 +197,32 @@
 				Loading…
 			</div>
 			<div class="scene" data-scene="Game">
-			  <div class="layers">
-			  	<div class="maze-layer"></div>
-			  	<div class="players-layer"></div>
-			  	<div class="pings-layer"></div>
-			  	<canvas class="paths-layer"></canvas>
-			  </div>
-			  <div class="controls">
-			  	<div class="draw">
-			    	<button>Draw</button>
-			    	<div class="colors" data-selected="chartreuse">
-			    		<span class="color" data-color="chartreuse"></span>
-			    		<span class="color" data-color="magenta"></span>
-			    	</div>
-			    </div>
-			    <div class="ping">
-			    	<button>Ping</button>
-			    </div>
-			  </div>
+				<div class="layers">
+					<div class="maze-layer"></div>
+					<div class="players-layer"></div>
+					<div class="pings-layer"></div>
+					<canvas class="paths-layer"></canvas>
+				</div>
+				<div class="text">
+					<h2>Rappels</h2>
+					<ul>
+						<li>Vous pouvez faire un signal sonore en cliquant sur le bouton PING puis en cliquant sur la carte.</li>
+						<li>Vous pouvez faire un signal sonore en cliquant sur le bouton DRAW puis en cliquant sur la carte.</li>
+					</ul>
+				</div>
+				<div class="controls">
+					<div class="draw">
+						<button>Draw</button>
+						<div class="colors" data-selected="chartreuse">
+							<span class="color" data-color="chartreuse"></span>
+							<span class="color" data-color="magenta"></span>
+						</div>
+					</div>
+					<div class="ping">
+						<button>Ping</button>
+					</div>
+				</div>
+				
 			</div>
 			<div class="scene" data-scene="outro"></div>
 		</div>
@@ -308,6 +369,9 @@
 		    this.element = element;
 		    this.cellSize = 30;
 		    this.layers = {
+		    	main: {
+		    		element: element.querySelector('.layers')
+		    	},
 		    	maze: {
 		    		element: element.querySelector('.layers .maze-layer')
 		    	},
@@ -330,8 +394,8 @@
 		    this.layers.paths.context = this.layers.paths.element.getContext('2d');
 		    this.maze = new Maze({ audio: this.audio, width, height, cellSize: this.cellSize });
 
-		    this.layers.paths.element.width = width * this.cellSize;
-		    this.layers.paths.element.height = height * this.cellSize;
+		    this.layers.main.element.style.width 	= 2 + width * this.cellSize + "px";
+		    this.layers.main.element.style.height 	= 2 + height * this.cellSize + "px";
 
 				// HRTF files loading
 				for (var i = 0; i < hrtfs.length; i++) {
