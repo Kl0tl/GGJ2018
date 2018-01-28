@@ -340,14 +340,16 @@
 				}
 				this.audio = {
 					source: audio.createBufferSource(),
+					volume: audio.createGain(),
 					panner: new BinauralFIR({audioContext: audio})
 				};
 				this.audio.panner.HRTFDataset = hrtfs;
 				this.audio.source.buffer = assets['./ameno.mp3'];
-				this.audio.source.connect(this.audio.panner.input);
+				this.audio.source.connect(this.audio.volume);
+				this.audio.volume.connect(this.audio.panner.input);
 				this.audio.panner.connect(audio.destination);
-				this.audio.source.loop = false;
-				this.audio.panner.setPosition(-90, 0, 2);
+				this.audio.source.loop = true;
+				this.audio.panner.setPosition(0, 0, 0);
 			}
 
 			onClick(event) {
@@ -405,17 +407,6 @@
 						hrtfs[i].buffer = buffer;
 				}
 
-		    this.player = new Player({
-		    	position: this.maze.startPos,
-		    	orientation: 0,
-		    	size: this.cellSize
-		    });
-		    this.ping = new Pulse({
-					audio: this.audio,
-					assets: this.assets,
-					removable: true
-				});
-
 		    this.onEnablePinging = this.onEnablePinging.bind(this);
 		    this.onEnableDrawing = this.onEnableDrawing.bind(this);
 		    this.onSelectColor = this.onSelectColor.bind(this);
@@ -423,6 +414,16 @@
 		  }
 
 		  onStart() {
+				this.player = new Player({
+					position: this.maze.startPos,
+					orientation: 0,
+					size: this.cellSize
+				});
+				this.ping = new Pulse({
+					audio: this.audio,
+					assets: this.assets,
+					removable: true
+				});
 		  	this.element.querySelector('.controls .ping button')
 		  		.addEventListener('click', this.onEnablePinging);
 		    this.element.querySelector('.controls .draw button')
@@ -442,13 +443,27 @@
 		  }
 
 		  onPing(event) {
+				const wasMounted = this.ping.element.parentElement;
 		  	this.ping.element.style.left = event.offsetX - 2.5 + 'px';
 		  	this.ping.element.style.top = event.offsetY - 2.5 + 'px';
-		  	if (!this.ping.element.parentElement) {
+				this.spatialize(this.ping);
+		  	if (!wasMounted) {
 		  		this.layers.pings.element.appendChild(this.ping.element);
+					this.ping.audio.source.start();
 		  	}
-				this.ping.audio.source.start();
 		  }
+
+			spatialize(node) {
+				const playerX = this.player.position.x * this.player.size + this.player.size / 2;
+				const playerY = this.player.position.y * this.player.size + this.player.size / 2;
+				const distanceX = playerX - parseFloat(node.element.style.left);
+				const distanceY = playerY - parseFloat(node.element.style.top);
+				const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+				const angle = Math.atan2(distanceX, distanceY);
+				const distanceRef = 30, distanceRolloff = 0.5;
+				node.audio.volume.gain.value = distanceRef / (distanceRef + distanceRolloff * (distance - distanceRef));
+				node.audio.panner.setPosition(angle * 180 / Math.PI, 0, 0);
+			}
 
 		  onEnableDrawing() {
 		  	this.mouse.track(this.layers.paths.element);
@@ -487,6 +502,7 @@
 		  			}, this.layers.players.lifetime);
 		  		} else {
 		  			this.player.update(gamepad);
+						if (this.ping.element.parentElement) this.spatialize(this.ping);
 		  		}
 		  	}
 		  	if (this.mouse.tracking && this.mouse.down) {
