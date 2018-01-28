@@ -167,6 +167,11 @@
 			margin-right: 20px;
 		}
 
+		.controls[data-selected="draw"] .draw button,
+		.controls[data-selected="ping"] .ping button {
+			border: 1px solid black;
+		}
+
 		.layers{
 			margin: 0 auto;
 		}
@@ -218,7 +223,7 @@
 					<div class="pings-layer"></div>
 					<canvas class="paths-layer"></canvas>
 				</div>
-				<div class="controls">
+				<div class="controls" data-selected="draw">
 					<div class="draw">
 						<button>Draw</button>
 						<div class="colors" data-selected="chartreuse">
@@ -497,6 +502,7 @@
 		  }
 
 		  onEnablePinging() {
+				this.element.querySelector('.controls').setAttribute('data-selected', 'ping');
 		  	this.layers.pings.element.addEventListener('click', this.onPing);
 		  	this.mouse.untrack(this.layers.paths.element);
 		  	this.layers.paths.element.after(this.layers.pings.element);
@@ -527,6 +533,7 @@
 			}
 
 		  onEnableDrawing() {
+				this.element.querySelector('.controls').setAttribute('data-selected', 'draw');
 		  	this.mouse.track(this.layers.paths.element);
 		  	this.layers.paths.element.removeEventListener('click', this.onPing);
 		  	this.layers.pings.element.after(this.layers.paths.element);
