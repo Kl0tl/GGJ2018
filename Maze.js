@@ -1,22 +1,27 @@
 class Maze {
 
-      constructor({ audio, width, height, cellSize }){
+      constructor({ audio, assets, width, height, cellSize }){
         this.width = width;
         this.height = height;
         this.audio = audio;
         this.startPos = { x: Math.random() * width | 0, y: Math.random() * height | 0 };
-        this.exitPos = { x:0, y:0 };
         this.cellSize = cellSize;
 
         this.direction = ["N","S","E","W"];
 
         this.exit = {
           position: { x: 0, y: 0 },
-          audio: {
-            source: null,
-            panner: null
-          }
+  				source: audio.createBufferSource(),
+  				volume: audio.createGain(),
+  				panner: new BinauralFIR({audioContext: audio})
         };
+
+				this.exit.panner.HRTFDataset = hrtfs;
+				this.exit.source.buffer = assets['./sounds/exit.wav'];
+				this.exit.source.connect(this.exit.volume);
+				this.exit.volume.connect(this.exit.panner.input);
+				this.exit.panner.connect(this.audio.destination);
+				this.exit.source.loop = true;
 
         this.dirValue = {
             "N": [1,0,0,0],
@@ -100,11 +105,11 @@ class Maze {
             }
 
             var pickFarthestIndex = this.pickFarthestDeadend();
-            
+
             if( pickFarthestIndex < 0 ){
               this.create();
             }else{
-              this.exitPos = this.deadEnds[ pickFarthestIndex ];
+              this.exit.position = this.deadEnds[ pickFarthestIndex ];
             }
       }
 
