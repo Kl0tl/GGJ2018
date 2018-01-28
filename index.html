@@ -105,15 +105,40 @@
 			bottom: 0;
 		}
 	</style>
+	<meta charset="utf-8">
 </head>
 <body>
 	<div id="root">
 		<div class="scenes" data-selected="Rules">
 			<div class="scene" data-scene="Rules">
-				<button>Go to intro</button>
+				<h1><%-Le nom du game%></h1>
+				<p>
+					Bienvenue, tout d'abord <%-Le nom du jeu %> est un jeu coopératif pour 2 joueurs.
+					Un joueur est enfermé dans un labyrinthe sans lumière pendant que le second joueur
+					voit la carte de ce labyrinthe. Le but est simple, le joueur enfermé doit sortir du labyrinthe.
+				</p>
+				<p>
+					Le joueur enfermé dans le labyrinthe doit prendre la manette ainsi que s'équiper du casque audio, 
+					et se placer derrière l'écran. Ce joueur ne peut pas voir l'écran de jeu !
+					Il peut se déplacer grâce au flèche directionnelle et les gachettes (strafe). Il peut également indiquer
+					sa position dans le labyrinthe en appuyant sur (A).
+				</p>
+				<p>
+					Le joueur externe, s'installe devant l'écran de façon à ce qu'il puisse voir la carte. Ce joueur ne peut pas parler ! Sur cette carte
+					il peut faire plusieurs choses, créer un signal sonore (en cliquant sur le bouton Ping puis sur la carte).
+					Il peut également dessiner sur la carte.
+				</p>
+				<button>Suivant</button>
 			</div>
 			<div class="scene" data-scene="Intro">
-				<button>Go to game</button>
+				<h1>Etes vous pret ?</h1>
+				<h2>Rappel</h2>
+				<ul>
+					<li>Le joueur avec la manette peut parler mais <strong>NE DOIT PAS</strong> voir l'écran.</li>
+					<li>Le joueur avec la manette doit porter le casque audio.</li>
+					<li>Le joueur devant l'écran <strong>NE DOIS PAS</strong> parler.</li>
+				</ul>
+				<button>Commencer</button>
 			</div>
 			<div class="scene" data-scene="Loading">
 				Loading…
