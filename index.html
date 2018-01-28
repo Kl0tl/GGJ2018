@@ -50,11 +50,6 @@
 			transform: translateX(-50%) translateY(-50%);
 		}
 
-		.players-layer .pulse {
-			width: 0; height: 0;
-			top: -5px;
-		}
-
 		@keyframes pulse {
 			from {
 				border: 1px solid rgba(0, 0, 0, 1);
@@ -63,6 +58,25 @@
 			to {
 				border: 1px solid rgba(0, 0, 0, 0);
 				width: 25px; height: 25px;
+			}
+		}
+
+		.players-layer .pulse {
+			width: 0; height: 0;
+			top: -15px;
+		}
+		.players-layer .pulse:after {
+			animation: 1s ease-in ghost-pulse infinite;
+		}
+
+		@keyframes ghost-pulse {
+			from {
+				border: 1px solid rgba(0, 0, 0, 1);
+				width: 0px; height: 0px;
+			}
+			to {
+				border: 1px solid rgba(0, 0, 0, 0);
+				width: 50px; height: 50px;
 			}
 		}
 
