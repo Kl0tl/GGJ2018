@@ -645,14 +645,22 @@
 		}
 
 		class Outro {
-			constructor({ element, onExit }) {
+			constructor({ element, audio, assets, onExit }) {
 				this.element = element;
+				this.audio = audio;
+				this.assets = assets;
 				this.onExit = onExit;
 			}
 
 			onStart() {
-				this.element.querySelector('button')
-					.addEventListener('click', this.onExit);
+				const source = this.audio.createBufferSource();
+				source.buffer = this.assets['./sounds/win.wav'];
+				source.connect(this.audio.destination);
+				source.start();
+				this.element.querySelector('button').addEventListener('click', () => {
+					source.stop();
+					this.onExit();
+				});
 			}
 		}
 
@@ -686,6 +694,8 @@
 				this.element = element;
 				this.outro = new Outro({
 					element: element.querySelector('.scene[data-scene="Outro"]'),
+					audio,
+					assets: loader.cache,
 					onExit: () => this.onEnter(this.intro)
 				});
 				this.game = new Game({
@@ -701,7 +711,8 @@
 					loaded: Promise.all([
 						loader.load('./sounds/ambient_main.wav'),
 						loader.load('./sounds/comehere.wav'),
-						loader.load('./sounds/exit.wav')
+						loader.load('./sounds/exit.wav'),
+						loader.load('./sounds/win.wav'),
 					]),
 					onExit: () => this.onEnter(this.game)
 				}),
