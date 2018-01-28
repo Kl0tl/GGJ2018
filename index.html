@@ -158,7 +158,6 @@
 		.controls{
 			display: flex;
 			padding: 20px 0;
-			width: 330px;
 			padding: 10px 0;
 			vertical-align: top;
 		}
@@ -234,6 +233,7 @@
 					<div class="ping">
 						<button>Ping</button>
 					</div>
+					<span class="ghost-countdown"></span>
 				</div>
 				<div class="text">
 					<h2>Rappels</h2>
@@ -567,6 +567,17 @@
 		  				ghost.element.classList.add('exit');
 		  				ghost.element.addEventListener('animationend',
 		  					() => ghost.element.remove());
+							const destination = this.element.querySelector('.ghost-countdown');
+							let handle = setInterval(() => {
+								const countdown = Math.floor((this.layers.players.cooldown -
+									(Date.now() - this.layers.players.lastPingAt)) / 1000);
+								if (countdown > 0) {
+									destination.innerText = `Ghost available in ${countdown}s`;
+								} else {
+									destination.innerText = '';
+									clearInterval(handle);
+								}
+							}, 1000);
 		  			}, this.layers.players.lifetime);
 		  		} else {
 		  			this.player.update(gamepad, this.maze.grid);
