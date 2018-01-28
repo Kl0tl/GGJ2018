@@ -17,6 +17,10 @@
 			position: relative;
 		}
 
+		.paths-layer {
+			margin: 1px;
+		}
+
 		.player {
 			position: absolute;
 		}
@@ -405,6 +409,8 @@
 
 		    this.layers.main.element.style.width 	= 2 + width * this.cellSize + "px";
 		    this.layers.main.element.style.height 	= 2 + height * this.cellSize + "px";
+				this.layers.paths.element.width = width * this.cellSize;
+				this.layers.paths.element.height = height * this.cellSize;
 
 				// HRTF files loading
 				for (var i = 0; i < hrtfs.length; i++) {
