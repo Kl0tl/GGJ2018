@@ -399,6 +399,7 @@
 					try { this.source.stop() } catch (_) {}
 				}
 
+				this.isExit = false,
 				this.source = audio.createBufferSource(),
 				this.volume = audio.createGain(),
 				this.panner = new BinauralFIR({audioContext: audio})
@@ -523,8 +524,10 @@
 			spatialize(node) {
 				const playerX = this.player.position.x * this.player.size + this.player.size / 2;
 				const playerY = this.player.position.y * this.player.size + this.player.size / 2;
-				const distanceX = playerX - node.position.x;
-				const distanceY = playerY - node.position.y;
+				const nodeX = node.isExit ? node.position.x * this.player.size + this.player.size / 2 : node.position.x;
+				const nodeY = node.isExit ? node.position.y * this.player.size + this.player.size / 2 : node.position.y;
+				const distanceX = playerX - nodeX;
+				const distanceY = playerY - nodeY;
 				const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
 				const angle = Math.atan2(distanceX, distanceY) + this.player.orientation;
 				const distanceRef = 30, distanceRolloff = 0.5;

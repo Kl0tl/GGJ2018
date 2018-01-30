@@ -100,6 +100,7 @@ class Maze {
             if( pickFarthestIndex < 0 ){
               this.create();
             }else{
+              this.exit.isExit = true;
               this.exit.position = this.deadEnds[ pickFarthestIndex ];
               this.exit.source = this.audio.createBufferSource();
               this.exit.volume = this.audio.createGain();
