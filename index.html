@@ -3,6 +3,7 @@
 <head>
 	<title>GGJ 2018</title>
 	<style>
+		canvas{opacity: 0.5;}
 		.scene {
 			display: none;
 		}
@@ -456,6 +457,7 @@
 					orientation: 0,
 					size: this.cellSize
 				});
+
 				this.ping = new Pulse();
 				this.onExit = onExit;
 
@@ -553,6 +555,7 @@
 
 		  onEachFrame() {
 		  	const gamepad = navigator.getGamepads()[0];
+		  	
 		  	if (gamepad) {
 		  		const canPing = this.layers.players.lastPingAt + this.layers.players.cooldown < Date.now();
 		  		const isPinging = [0, 1, 2, 3].some(index => {
@@ -705,8 +708,8 @@
 					element: element.querySelector('.scene[data-scene="Game"]'),
 					assets: loader.cache,
 					audio,
-					width: 15,
-					height: 15,
+					width: 8,
+					height: 8,
 					onExit: () => this.onEnter(this.outro)
 				});
 				this.loading = new Loading({

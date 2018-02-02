@@ -11,7 +11,7 @@ class Maze {
         this.direction = ["N","S","E","W"];
 
         this.exit = {
-          position: { x: 0, y: 0 },
+          position: { x: 0, y: 0 }
         };
 
         this.dirValue = {
@@ -50,7 +50,7 @@ class Maze {
               }
             }
 
-            this.cell.push( this.startPos );
+            this.cell.push( this.startPos );  
 
             var t = 0;
             while(this.cell.length > 0){
@@ -87,16 +87,14 @@ class Maze {
               }
             }
 
-            for(var x = 0; x < this.grid.length; x++){
-              for(var y = 0; y < this.grid[x].length; y++){
-                if( this.grid[x][y].reduce( (a,b) => a+b ) === 3 ){
+            for(var y = 0; y < this.grid.length; y++){
+              for(var x = 0; x < this.grid[y].length; x++){
+                if( this.grid[y][x].reduce( (a,b) => a+b ) === 1 ){
                   this.deadEnds.push( { x, y } );
                 }
               }
             }
-
             var pickFarthestIndex = this.pickFarthestDeadend();
-
             if( pickFarthestIndex < 0 ){
               this.create();
             }else{
@@ -105,16 +103,17 @@ class Maze {
               this.exit.source = this.audio.createBufferSource();
               this.exit.volume = this.audio.createGain();
               this.exit.panner = new BinauralFIR({audioContext: this.audio});
-      				this.exit.panner.HRTFDataset = hrtfs;
-      				this.exit.source.connect(this.exit.volume);
-      				this.exit.volume.connect(this.exit.panner.input);
-      				this.exit.panner.connect(this.audio.destination);
+              this.exit.panner.HRTFDataset = hrtfs;
+              this.exit.source.connect(this.exit.volume);
+              this.exit.volume.connect(this.exit.panner.input);
+              this.exit.panner.connect(this.audio.destination);
       				this.exit.source.loop = true;
               this.exit.source.buffer = this.assets['./sounds/exit.wav'];
             }
       }
 
       pickFarthestDeadend(){
+        
         var indexFarthest = -1;
         var vecLen = 0;
 
@@ -155,4 +154,11 @@ class Maze {
          }
       }
     }
+}
+
+function Debug({x,y}){
+  var ctx = document.querySelector('canvas').getContext('2d');
+
+  ctx.fillStyle = "#"+Math.random().toString(16).substr(-6);
+  ctx.fillRect(x*30,y*30,30,30);
 }
